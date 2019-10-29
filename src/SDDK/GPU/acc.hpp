@@ -401,6 +401,12 @@ inline void zero(T* ptr__, size_t n__, stream_id sid__)
     CALL_DEVICE_API(MemsetAsync, (ptr__, 0, n__ * sizeof(T), stream(sid__)));
 }
 
+template <typename T>
+inline void zero(T* ptr__, size_t n__, acc_stream_t stream)
+{
+    CALL_DEVICE_API(MemsetAsync, (ptr__, 0, n__ * sizeof(T), stream));
+}
+
 /// Zero the 2D block of device memory.
 template <typename T>
 inline void zero(T* ptr__, int ld__, int nrow__, int ncol__)

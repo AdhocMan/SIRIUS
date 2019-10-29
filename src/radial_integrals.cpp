@@ -1,4 +1,5 @@
 #include "radial_integrals.hpp"
+#include "spline_inner.hpp"
 #include <omp.h>
 
 namespace sirius {
@@ -53,6 +54,8 @@ void Radial_integrals_aug<jl_deriv>::generate()
 {
     PROFILE("sirius::Radial_integrals|aug");
 
+    SplineInner<std::tuple<int, int, int, int>> inner_splines;
+    std::list<Spherical_Bessel_functions> bessel_functions;
     /* interpolate <j_{l_n}(q*x) | Q_{xi,xi'}^{l}(x) > with splines */
     for (int iat = 0; iat < unit_cell_.num_atom_types(); iat++) {
         auto& atom_type = unit_cell_.atom_type(iat);
@@ -72,11 +75,11 @@ void Radial_integrals_aug<jl_deriv>::generate()
             }
         }
 
-        #pragma omp parallel for
         for (int iq_loc = 0; iq_loc < spl_q_.local_size(); iq_loc++) {
             int iq = spl_q_[iq_loc];
 
-            Spherical_Bessel_functions jl(2 * lmax_beta, atom_type.radial_grid(), grid_q_[iq]);
+            bessel_functions.emplace_back(2 * lmax_beta, atom_type.radial_grid(), grid_q_[iq]);
+            auto& jl = bessel_functions.back();
 
             for (int l3 = 0; l3 <= 2 * lmax_beta; l3++) {
                 for (int idxrf2 = 0; idxrf2 < nbrf; idxrf2++) {
@@ -88,18 +91,38 @@ void Radial_integrals_aug<jl_deriv>::generate()
 
                         if (l3 >= std::abs(l1 - l2) && l3 <= (l1 + l2) && (l1 + l2 + l3) % 2 == 0) {
                             if (jl_deriv) {
-                                auto s = jl.deriv_q(l3);
-                                values_(idx, l3, iat)(iq) =
-                                    sirius::inner(s, atom_type.q_radial_function(idxrf1, idxrf2, l3), 0);
+                                inner_splines.add(jl.deriv_q(l3), atom_type.q_radial_function(idxrf1, idxrf2, l3), 0,
+                                                  std::make_tuple(idx, l3, iat, iq));
+
                             } else {
-                                values_(idx, l3, iat)(iq) =
-                                    sirius::inner(jl[l3], atom_type.q_radial_function(idxrf1, idxrf2, l3), 0);
+                                inner_splines.add(jl[l3], atom_type.q_radial_function(idxrf1, idxrf2, l3), 0,
+                                                  std::make_tuple(idx, l3, iat, iq));
                             }
                         }
                     }
                 }
             }
         }
+
+    }
+
+    auto pu = this->unit_cell_.parameters().processing_unit();
+    auto inner_results = inner_splines.compute(pu);
+
+    for (const auto& r : inner_results) {
+        const auto& val     = r.first;
+        const auto& indices = r.second;
+
+        values_(std::get<0>(indices), std::get<1>(indices), std::get<2>(indices))(std::get<3>(indices)) = val;
+    }
+
+    for (int iat = 0; iat < unit_cell_.num_atom_types(); iat++) {
+        auto& atom_type = unit_cell_.atom_type(iat);
+        /* number of radial beta-functions */
+        int nbrf = atom_type.mt_radial_basis_size();
+        /* maximum l of beta-projectors */
+        int lmax_beta = atom_type.indexr().lmax();
+
         for (int l = 0; l <= 2 * lmax_beta; l++) {
             for (int idx = 0; idx < nbrf * (nbrf + 1) / 2; idx++) {
                 unit_cell_.comm().allgather(&values_(idx, l, iat)(0), spl_q_.global_offset(), spl_q_.local_size());
