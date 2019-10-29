@@ -34,9 +34,6 @@
 #include "radial_grid.hpp"
 #include "SDDK/memory.hpp"
 
-#include <string> // TODO: remove
-#include <cstdlib> // TODO: remove
-
 #ifdef __GPU
 #include "SDDK/GPU/acc.hpp"
 
@@ -93,14 +90,7 @@ class SplineInner
     std::vector<std::pair<double, IDENTIFIER>> compute(sddk::device_t pu)
     {
         std::vector<std::pair<double, IDENTIFIER>> results(input_splines_.size());
-        const char* env = std::getenv("PU_UNIT");
-        std::string pu_name("CPU");
-        if (env) {
-            pu_name = std::string(env);
-        }
-
-        // if (pu == sddk::device_t::CPU) {
-        if (pu_name == std::string("CPU")) {
+        if (pu == sddk::device_t::CPU) {
             PROFILE("sirius::Spline_inner|cpu");
 
 #pragma omp parallel for schedule(static)
@@ -112,8 +102,6 @@ class SplineInner
             }
         } else {
 #ifdef __GPU
-            std::cout << " ===================== GPU INNER SPLINE PREPARATION ===========================" << std::endl;
-
             PROFILE("sirius::Spline_inner|gpu");
             sddk::mdarray<int, 1> offsets(input_splines_.size(), sddk::memory_t::host_pinned);
             offsets.allocate(sddk::memory_t::device);
@@ -182,7 +170,6 @@ class SplineInner
             // r^m
             const auto m = std::get<2>(input_splines_[0]); // TODO
 
-            std::cout << " ===================== GPU INNER SPLINE kernel ===========================" << std::endl;
             {
                 PROFILE("sirius::Spline_inner|gpu-computation");
                 switch (m) {
