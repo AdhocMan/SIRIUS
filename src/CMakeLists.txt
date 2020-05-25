@@ -68,7 +68,6 @@ set(_SOURSES
   "gpu/acc.cpp"
   "gpu/acc_blas.cpp"
   "gpu/cusolver.cpp"
-  "gpu/cublas.cpp"
   "sht/sht.cpp"
   "sirius_version.cpp"
   "mixer/mixer_functions.cpp"
@@ -97,6 +96,7 @@ endif()
 
 target_link_libraries(sirius PUBLIC OpenMP::OpenMP_CXX
                                     SpFFT::spfft
+                                    SPLA::spla
                                     GSL::gsl
                                     "${LINALG_LIB}"
                                     MPI::MPI_CXX

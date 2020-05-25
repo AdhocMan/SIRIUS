@@ -118,6 +118,7 @@ find_package(LibSPG REQUIRED)
 find_package(HDF5 REQUIRED C)
 include(cmake/hdf5_target.cmake)
 find_package(SpFFT 0.9.6 CONFIG REQUIRED)
+find_package(SPLA CONFIG REQUIRED)
 
 if (USE_OPENMP)
   find_package(OpenMP REQUIRED)

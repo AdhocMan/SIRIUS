@@ -26,6 +26,7 @@
 #define __SIMULATION_CONTEXT_HPP__
 
 #include <algorithm>
+#include <spla/spla.hpp>
 
 #include "simulation_parameters.hpp"
 #include "mpi/mpi_grid.hpp"
@@ -221,6 +222,9 @@ class Simulation_context : public Simulation_parameters
 
     /// Type of BLAS linear algebra library.
     linalg_t blas_linalg_t_{linalg_t::none};
+
+    // Spla context
+    spla::Context spla_ctx_ = spla::Context(SPLA_PU_HOST);
 
     mutable double evp_work_count_{0};
     mutable int num_loc_op_applied_{0};
@@ -720,6 +724,16 @@ class Simulation_context : public Simulation_parameters
     sddk::FFT3D_grid const& fft_coarse_grid() const
     {
         return fft_coarse_grid_;
+    }
+
+    spla::Context const& spla_context() const
+    {
+        return spla_ctx_;
+    }
+
+    spla::Context& spla_context()
+    {
+        return spla_ctx_;
     }
 
     inline double evp_work_count(double w__ = 0) const

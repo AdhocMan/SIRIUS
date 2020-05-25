@@ -358,6 +358,17 @@ void Simulation_context::initialize()
         }
     }
 
+    switch (processing_unit()) {
+        case device_t::CPU: {
+            spla_ctx_ = spla::Context(SPLA_PU_HOST);
+            break;
+        }
+        case device_t::GPU: {
+            spla_ctx_ = spla::Context(SPLA_PU_GPU);
+            break;
+        }
+    }
+
     /* can't use reduced G-vectors in LAPW code */
     if (full_potential()) {
         control_input_.reduce_gvec_ = false;

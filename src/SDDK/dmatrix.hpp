@@ -28,6 +28,7 @@
 #include "linalg/blacs_grid.hpp"
 #include "splindex.hpp"
 #include "hdf5_tree.hpp"
+#include <spla/spla.hpp>
 
 namespace sddk {
 
@@ -61,6 +62,9 @@ class dmatrix : public matrix<T>
 
     /// ScaLAPACK matrix descriptor.
     ftn_int descriptor_[9];
+
+    /// matrix distribution used for SPLA library functions
+    spla::MatrixDistribution spla_distri_ = spla::MatrixDistribution::create_mirror(MPI_COMM_SELF);
 
     void init()
     {
@@ -157,6 +161,11 @@ class dmatrix : public matrix<T>
     inline int const* descriptor() const
     {
         return descriptor_;
+    }
+
+    inline spla::MatrixDistribution& spla_distribution()
+    {
+        return spla_distri_;
     }
 
     //void zero(int ir0__, int ic0__, int nr__, int nc__)

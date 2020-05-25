@@ -15,12 +15,17 @@ packages = {
         "options" : []
     },
     "spfft" : {
-        "url"     : "https://github.com/eth-cscs/SpFFT/archive/v0.9.11.tar.gz",
+        "url"     : "https://github.com/eth-cscs/SpFFT/archive/v0.9.13.tar.gz",
         "options" : ["-DCMAKE_BUILD_TYPE=RELEASE",
                      #"-DSPFFT_GPU_BACKEND=CUDA",
                      "-DSPFFT_SINGLE_PRECISION=OFF",
                      "-DSPFFT_MPI=ON",
                      "-DSPFFT_OMP=ON"]
+    },
+    "spla" : {
+        "url"     : "https://github.com/eth-cscs/spla/archive/v1.0.0.tar.gz",
+        "options" : ["-DCMAKE_BUILD_TYPE=RELEASE",
+                     "-DSPLA_OMP=ON"]
     },
     "gsl" : {
         "url"     : "ftp://ftp.gnu.org/gnu/gsl/gsl-2.6.tar.gz",
@@ -59,6 +64,9 @@ def configure_package(package_name, prefix):
 
     if package_name == 'spfft':
         package_dir = "SpFFT-" + package_dir[1:]
+
+    if package_name == 'spla':
+        package_dir = "spla-" + package_dir[1:]
 
     cwdlibs = os.getcwd() + "/libs/"
 
@@ -113,7 +121,7 @@ def configure_package(package_name, prefix):
         shutil.rmtree('./libs/_build')
         os.makedirs(prefix + '/include/spglib', exist_ok=True)
         shutil.copyfile(prefix + '/include/spglib.h', prefix + '/include/spglib/spglib.h')
-    elif package_name == 'spfft':
+    elif package_name == 'spfft' or package_name == 'spla':
         os.mkdir('./libs/_build')
         cmd = ["cmake", "../" + package_dir] + package["options"] + ["-DCMAKE_INSTALL_PREFIX=" + prefix]
 
@@ -144,6 +152,7 @@ def main():
               "The following packages can be specified:\n\n" \
               "  fftw  - FFTW library\n" \
               "  spfft - SpFFT library\n" \
+              "  spla  - SPLA library\n" \
               "  gsl   - GNU scientific library\n" \
               "  hdf5  - HDF5 library\n" \
               "  xc    - XC library\n" \
@@ -161,7 +170,7 @@ def main():
               "system directory, SpFFT will find it. If FFTW/MKL is not installed or installed in an unusual path,\n"\
               "you need to export FFTW_ROOT variable, pointing to this directory. For example, this command will\n"
               "first download and install FFTW library and then build SpFFT and other libraries:\n\n"\
-              "> CC=mpicc CXX=mpic++ FC=mpif90 FCCPP=cpp FFTW_ROOT=$HOME/local python prerequisite.py $HOME/local fftw spfft gsl hdf5 xc spg\n\n")
+              "> CC=mpicc CXX=mpic++ FC=mpif90 FCCPP=cpp FFTW_ROOT=$HOME/local python prerequisite.py $HOME/local fftw spfft spla gsl hdf5 xc spg\n\n")
 
         sys.exit(0)
 
